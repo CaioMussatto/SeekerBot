@@ -1,42 +1,111 @@
-# 🧬 Bioinfo Seeker Pro
+# 🔍 Bioinfo-Seeker Pro
+### Automated Job Scraper & Tracker for Bioinformatics & Biotech
 
-A professional automated job hunting platform specifically designed for Bioinformatics and Biological Sciences. This tool crawls multiple job boards, applies custom filters, and manages a local database of opportunities with a high-end dark mode interface.
+[![Docker Hub](https://img.shields.io/badge/Docker_Hub-Latest-blue?logo=docker)](https://hub.docker.com/repository/docker/caiomussatto/jobseeker)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Cloud_Run-green?logo=googlecloud)](https://jobseeker-pro-763634027496.southamerica-east1.run.app/)
+[![Python](https://img.shields.io/badge/Python-3.11+-yellow?logo=python)](https://www.python.org/)
 
-## 🚀 Key Features
+**Bioinfo-Seeker Pro** is a specialized automation tool designed to aggregate, filter, and track job opportunities in the fields of Bioinformatics, Biology, and Data Science. It crawls multiple sources (LinkedIn, Indeed, Google Jobs) and provides a clean dashboard for job application management.
 
-- **Multi-Source Scraping**: Integrated with LinkedIn, Indeed, and Google Jobs using the JobSpy engine.
-- **Dynamic Filtering**: Real-time filtering based on user-defined mandatory keywords in job descriptions.
-- **Modern Tech Stack**: Built with Flask (Python) and a robust SQLAlchemy-based SQLite database.
-- **Async-like UX**: Includes a custom JavaScript-based loading overlay to handle long-running scraping tasks without page timeouts.
-- **Clean UI**: A high-contrast dark mode dashboard built with Bootstrap 5 and custom CSS.
-- **Job Management**: Complete CRUD-like lifecycle (Search -> Save -> Mark as Applied -> Delete).
+---
 
-## 🛠️ Technical Skills Demonstrated
+## 🚀 Live Links
+- **Web App (Live):** [JobSeeker Pro on Google Cloud Run](https://jobseeker-pro-763634027496.southamerica-east1.run.app/)
+- **Docker Image:** [caiomussatto/jobseeker on Docker Hub](https://hub.docker.com/repository/docker/caiomussatto/jobseeker)
+- **Source Code:** [GitHub Repository](https://github.com/CaioMussatto/Bioinfo-Seeker-Pro)
 
-- **Back-end**: Python, Flask, SQLAlchemy (ORM).
-- **Front-end**: HTML5, CSS3 (Modern UI/UX with Glassmorphism), JavaScript (DOM manipulation).
-- **Data Engineering**: Web scraping, data cleaning, and persistence.
-- **Environment Management**: Managed via `uv` for lightning-fast dependency resolution and reproducibility.
-- **DevOps Ready**: Configured with `.gitignore` and environment variables for cloud deployment.
+---
 
-## 📂 Project Structure
+## ✨ Key Features
+- **Multi-Source Scraping:** Concurrent extraction from LinkedIn, Indeed, and Google Jobs using `python-jobspy`.
+- **Intelligent Filtering:** Precision filtering by mandatory keywords (e.g., Python, Master's, Laboratory) and location.
+- **Dual Operating Modes:**
+  - **Personal Mode:** Connected to a Supabase (PostgreSQL) database for persistent tracking and "Applied/Delete" status management.
+  - **Public Mode:** Ephemeral session-based search for public demonstrations.
+- **Clean UI:** Dark-themed responsive dashboard built with Flask and Bootstrap 5.
+- **Dual Date Tracking:** Displays both the original job posting date and the date the opportunity was found by the bot.
 
-```text
-.
-├── app.py           # Flask Server & Routes
-├── database.py      # SQLAlchemy Models & DB Connection
-├── seeker.py        # Core Scraping & Filtering Logic
-├── static/          # Custom CSS & Assets
-├── templates/       # Jinja2 HTML Templates
-├── pyproject.toml   # Project metadata and dependencies
-└── uv.lock          # Deterministic lockfile
+---
+
+## 🛠️ Tech Stack
+- **Backend:** Python (Flask)
+- **Database:** PostgreSQL (Supabase) via SQLAlchemy ORM
+- **Scraping Engine:** Python-JobSpy (Crumble based)
+- **Frontend:** Jinja2 Templates, Bootstrap 5, Markdown
+- **DevOps:** Docker (Multi-stage builds), UV (Package Manager)
+- **Cloud:** Google Cloud Run (Serverless)
+
+---
+
+## 🐳 Running with Docker
+
+To run the public version of the app locally:
+
+```bash
+docker pull caiomussatto/jobseeker:latest
+docker run -p 8080:8080 caiomussatto/jobseeker:latest
 ```
+
+Then access `http://localhost:8080` in your browser.
+
+---
+
+## 🔧 Local Development & Setup
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/CaioMussatto/Bioinfo-Seeker-Pro.git
+
+cd Bioinfo-Seeker-Pro
+```
+
+
+2. **Environment Variables:**
+Create a `.env` file for your database connection:
+```env
+DATABASE_URL=your_postgresql_url
+USE_DB=True
+```
+
+
+3. **Install dependencies (using UV):**
+```bash
+uv sync --no-install-project
+```
+
+
+4. **Initialize the database:**
+```bash
+python database.py
+```
+
+
+5. **Run the application:**
+```bash
+python app.py
+```
+
+
+
 ---
 
 ## 👤 Author
 
-**Caio Mussatto** - [Caio.mussatto@gmail.com](mailto:Caio.mussatto@gmail.com)
+**Caio Mussatto**
 
----
+* Email: [Caio.mussatto@gmail.com](mailto:Caio.mussatto@gmail.com)
+* [LinkedIn](https://www.linkedin.com/in/caiomussatto/)
 
-*Licensed under the MIT License.*
+## Contributing
+
+Contributions, issues, and feature requests are welcome.
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
