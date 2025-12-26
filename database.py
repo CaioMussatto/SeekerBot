@@ -7,13 +7,19 @@ from sqlalchemy.orm import declarative_base
 
 load_dotenv()
 
+USE_DB_ENV = os.getenv("USE_DB", "True") == "True"
 raw_url = os.getenv("DATABASE_URL")
-if not raw_url:
-    print("ERRO: DATABASE_URL não encontrada no .env")
-    sys.exit(1)
 
-clean_url = raw_url.split("?")[0]
-DATABASE_URL = clean_url.replace("postgres://", "postgresql://")
+if not raw_url:
+    if USE_DB_ENV:
+        print("❌ ERRO: DATABASE_URL não encontrada no .env")
+        sys.exit(1)
+    else:
+        DATABASE_URL = "sqlite:///./public_mode_temp.db"
+        print("⚠️ Modo Público Ativo: Usando SQLite temporário.")
+else:
+    clean_url = raw_url.split("?")[0]
+    DATABASE_URL = clean_url.replace("postgres://", "postgresql://")
 
 Base = declarative_base()
 
@@ -29,20 +35,20 @@ class Job(Base):
     source = Column(String(100))
     applied = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    # NOVO CAMPO: Data que a vaga foi postada no LinkedIn/Indeed/Google
+    published_at = Column(String(50)) 
+
+engine = create_engine(DATABASE_URL)
 
 def init_db(reset=False):
     try:
-        engine = create_engine(DATABASE_URL)
-        
         if reset:
             print(" Resetando banco de dados...")
             Base.metadata.drop_all(engine)
-        
         Base.metadata.create_all(engine)
-        print("CONEXÃO ESTABELECIDA! Tabela 'jobs' pronta no Supabase.")
+        print(f"✅ Banco iniciado!")
     except Exception as e:
-        print(f"Erro ao conectar: {e}")
+        print(f"❌ Erro ao conectar: {e}")
 
 if __name__ == "__main__":
-    reset_flag = "--reset" in sys.argv
-    init_db(reset=reset_flag)
+    init_db(reset="--reset" in sys.argv)

@@ -1,91 +1,92 @@
-from flask import Flask, render_template, redirect, url_for, request, session as flask_session
+import os
+from flask import Flask, render_template, request, redirect, url_for
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import markdown
 from database import Job, DATABASE_URL
 from seeker import fetch_and_save_jobs
-import markdown
 
 app = Flask(__name__)
-app.secret_key = "caio_key_final_v2" 
-engine = create_engine(DATABASE_URL)
-Session = sessionmaker(bind=engine)
 
-def format_job_description(text):
-    if not text: 
-        return "Sem descrição."
-    try:
-        return markdown.markdown(text)
-    except Exception:
-        return text
+# Configurações de Modo (Público vs Pessoal)
+USE_DB = os.getenv("USE_DB", "True") == "True"
+
+def get_session():
+    engine = create_engine(DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    return Session()
 
 @app.route('/')
 def index():
-    temp_results = flask_session.get('temp_results')
+    jobs = []
+    mode_text = "Modo Pessoal (Geral)" if USE_DB else "Modo Público (Sessão)"
     
-    if temp_results:
-        for j in temp_results:
-            j['formatted_description'] = format_job_description(j.get('description', ''))
-        return render_template('index.html', jobs=temp_results, mode="Simulação")
-
-    db_session = Session()
-    try:
-        db_jobs = db_session.query(Job).filter(Job.applied == False).order_by(Job.created_at.desc()).all()
-        for j in db_jobs:
-            j.formatted_description = format_job_description(j.description)
-        return render_template('index.html', jobs=db_jobs, mode="Banco de Dados")
-    finally:
-        db_session.close()
+    if USE_DB:
+        session = get_session()
+        # MUDANÇA AQUI: Filtra para mostrar apenas as NÃO aplicadas
+        jobs = session.query(Job).filter(Job.applied == False).order_by(Job.created_at.desc()).all()
+        session.close()
+    
+    for job in jobs:
+        job.formatted_description = markdown.markdown(job.description or "")
+        
+    return render_template('index.html', jobs=jobs, can_use_db=USE_DB, mode=mode_text)
 
 @app.route('/refresh', methods=['POST'])
 def refresh():
-    if 'temp_results' in flask_session:
-        flask_session.pop('temp_results')
+    term = request.form.get('term')
+    google_term = request.form.get('google_term')
+    location = request.form.get('location', 'Brazil')
+    results_wanted = request.form.get('results_wanted', 30)
+    hours_old = request.form.get('hours_old', 336)
+    filter_words = request.form.get('filter_words', "")
+    save_db = request.form.get('save_db') == 'on'
 
-    term = request.form.get('term', 'bioinformatics')
-    g_term = request.form.get('google_term', 'bioinformatics jobs Brazil')
-    f_words = request.form.get('filter_words', "")
-    results_q = request.form.get('results_wanted', 20)
-    hours_q = request.form.get('hours_old', 336)
-    save = "save_db" in request.form
-    
-    results = fetch_and_save_jobs(
-        term=term, 
-        google_term=g_term, 
-        save_to_db=save,
-        results_wanted=results_q,
-        hours_old=hours_q,
-        filter_words=f_words
+    # Chama o robô (seeker.py)
+    new_jobs = fetch_and_save_jobs(
+        term=term,
+        google_term=google_term,
+        save_to_db=save_db,
+        results_wanted=results_wanted,
+        hours_old=hours_old,
+        filter_words=filter_words,
+        location=location
     )
-    
-    # Se NÃO for salvar no banco, joga na sessão para o index ler
-    if not save:
-        flask_session['temp_results'] = results
-        
-    return redirect(url_for('index'))
+
+    if USE_DB:
+        return redirect(url_for('index'))
+    else:
+        # No modo público, passamos as vagas direto para o template sem salvar
+        for job in new_jobs:
+            job['formatted_description'] = markdown.markdown(job['description'] or "")
+        return render_template('index.html', jobs=new_jobs, can_use_db=False, mode="Busca em Tempo Real")
 
 @app.route('/apply/<int:job_id>')
 def apply(job_id):
-    db_session = Session()
-    try:
-        job = db_session.query(Job).get(job_id)
-        if job:
-            job.applied = True
-            db_session.commit()
-    finally:
-        db_session.close()
+    if not USE_DB:
+        return redirect(url_for('index'))
+    
+    session = get_session()
+    job = session.query(Job).get(job_id)
+    if job:
+        job.applied = not job.applied  # Inverte o status (Toggle)
+        session.commit()
+    session.close()
     return redirect(url_for('index'))
 
 @app.route('/delete/<int:job_id>')
 def delete_job(job_id):
-    db_session = Session()
-    try:
-        job = db_session.query(Job).get(job_id)
-        if job:
-            db_session.delete(job)
-            db_session.commit()
-    finally:
-        db_session.close()
+    if not USE_DB:
+        return redirect(url_for('index'))
+    
+    session = get_session()
+    job = session.query(Job).get(job_id)
+    if job:
+        session.delete(job)
+        session.commit()
+    session.close()
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)

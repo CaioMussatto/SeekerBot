@@ -1,17 +1,21 @@
 [project]
-name = "bioinfo-seeker"
+name = "jobseeker"
 version = "0.1.0"
-description = "Add your description here"
+description = "JobSeeker Pro - Rastreador de Vagas"
+authors = [
+    { name = "Caio Mussatto", email = "Caio.mussatto@gmail.com" }
+]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
-    "beautifulsoup4>=4.14.3",
     "flask>=3.1.2",
     "markdown>=3.10",
-    "pandas>=2.3.3",
-    "playwright>=1.57.0",
     "psycopg2-binary>=2.9.11",
     "python-dotenv>=1.2.1",
     "python-jobspy>=1.1.82",
     "sqlalchemy>=2.0.45",
 ]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

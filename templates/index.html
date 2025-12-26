@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bioinfo Seeker Pro | Caio Mussatto</title>
+    <title>JobSeeker Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -11,65 +11,75 @@
 
 <div id="loader-overlay">
     <div class="spinner-border" role="status"></div>
-    <h2 class="mt-4 text-white">O Robô está rastreando a web... 🤖</h2>
-    <p class="text-muted">Isso pode levar de 30 a 60 segundos. Por favor, aguarde.</p>
+    <h2 class="mt-4 text-white">JobSeeker rastreando oportunidades... 🤖</h2>
+    <p class="text-muted">Processando LinkedIn, Indeed e Google Jobs.</p>
 </div>
 
 <nav class="navbar navbar-dark sticky-top shadow">
     <div class="container d-flex justify-content-between align-items-center">
         <a class="navbar-brand d-flex align-items-center" href="/">
-            <span style="font-size: 1.8rem; margin-right: 10px;">🧬</span>
-            <strong>BIOINFO SEEKER</strong>
+            <span style="font-size: 1.8rem; margin-right: 10px;">🔍</span>
+            <strong>JOBSEEKER</strong>
         </a>
         <div>
             <span class="badge rounded-pill bg-dark border border-primary px-3 py-2 me-3">
                 📍 {{ mode }}
             </span>
             <button type="button" class="btn btn-refresh text-white" data-bs-toggle="modal" data-bs-target="#searchModal">
-                🔍 Nova Busca Personalizada
+                🚀 Nova Busca
             </button>
         </div>
     </div>
 </nav>
 
-<div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+<div class="modal fade" id="searchModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow-lg">
       <div class="modal-header border-secondary">
-        <h5 class="modal-title text-white" id="searchModalLabel">Configurar Parâmetros do Robô</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title text-white">Parâmetros do JobSeeker</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <form action="/refresh" method="POST" onsubmit="showLoader()">
           <div class="modal-body">
             <div class="mb-3">
-                <label class="form-label text-white">Termo Principal (LinkedIn/Indeed)</label>
-                <input type="text" name="term" class="form-control" value="bioinformatics">
+                <label class="form-label text-white">Termo (Ex: Biólogo)</label>
+                <input type="text" name="term" class="form-control" value="Biólogo" required>
             </div>
             <div class="mb-3">
-                <label class="form-label text-white">Termo Específico Google Jobs</label>
-                <input type="text" name="google_term" class="form-control" value="bioinformatics jobs Brazil">
+                <label class="form-label text-white">Frase Google Jobs</label>
+                <input type="text" name="google_term" class="form-control" value="Vagas de Biologia em São Paulo">
             </div>
             <div class="mb-3">
-                <label class="form-label text-warning">Filtrar por palavras (Ex: python, mestre)</label>
-                <input type="text" name="filter_words" class="form-control" placeholder="Deixe vazio para trazer tudo">
+                <label class="form-label text-info">📍 Cidade ou 'Brazil'</label>
+                <input type="text" name="location" class="form-control" value="Brazil">
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-warning">Palavras Obrigatórias</label>
+                <input type="text" name="filter_words" class="form-control" placeholder="mestre, laboratório, python">
             </div>
             <div class="row">
                 <div class="col-6 mb-3">
-                    <label class="form-label text-white">Qtd. Resultados</label>
-                    <input type="number" name="results_wanted" class="form-control" value="20">
+                    <label class="form-label text-white">Volume</label>
+                    <input type="number" name="results_wanted" class="form-control" value="30">
                 </div>
                 <div class="col-6 mb-3">
-                    <label class="form-label text-white">Horas atrás (Limite)</label>
+                    <label class="form-label text-white">Horas atrás</label>
                     <input type="number" name="hours_old" class="form-control" value="336">
                 </div>
             </div>
+            
             <div class="form-check form-switch mt-3">
-                <input class="form-check-input" type="checkbox" name="save_db" id="saveDb" checked>
-                <label class="form-check-label text-white" for="saveDb">💾 Salvar resultados permanentemente?</label>
+                {% if can_use_db %}
+                    <input class="form-check-input" type="checkbox" name="save_db" id="saveDb" checked>
+                    <label class="form-check-label text-white" for="saveDb">💾 Salvar no Banco de Dados?</label>
+                {% else %}
+                    <input class="form-check-input" type="checkbox" id="saveDb" disabled>
+                    <label class="form-check-label text-muted" for="saveDb">💾 Banco Desativado (Modo Público)</label>
+                {% endif %}
             </div>
           </div>
           <div class="modal-footer border-0">
-            <button type="submit" class="btn btn-primary w-100 py-3 shadow">Lançar Robô Agora 🚀</button>
+            <button type="submit" class="btn btn-primary w-100 py-3 shadow">Lançar Robô 🚀</button>
           </div>
       </form>
     </div>
@@ -79,41 +89,55 @@
 <div class="container mt-4">
     {% if not jobs %}
         <div class="text-center py-5">
-            <h2 class="text-muted">☕ Nenhuma vaga encontrada no momento.</h2>
-            <p>Clique no botão acima para iniciar uma nova busca.</p>
+            <h2 class="text-white">Nenhuma vaga na visualização.</h2>
+            <p class="text-light">Use o botão <strong>Nova Busca</strong> para iniciar uma pesquisa em tempo real.</p>
         </div>
     {% endif %}
 
     {% for job in jobs %}
     <div class="card job-card p-4 mb-4 shadow-sm">
-        
-        {% if job.id %}
-        <a href="/delete/{{ job.id }}" class="btn-delete" title="Remover vaga" onclick="return confirm('Tem certeza que deseja remover esta vaga?')">&times;</a>
+        {% if job.id and can_use_db %}
+        <a href="/delete/{{ job.id }}" class="btn-delete" onclick="return confirm('Excluir permanentemente do banco?')">&times;</a>
         {% endif %}
-
         <div class="row align-items-center">
             <div class="col-md-9">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <h3 class="job-title m-0">{{ job.title }}</h3>
                     <span class="badge bg-secondary">{{ job.source }}</span>
                 </div>
-                <p class="mb-3" style="color: #00f2ff; font-weight: 700; font-size: 1.15rem;">
-                    🏢 {{ job.company }} | 📍 {{ job.location }}
-                </p>
-                <div class="description-box">
-                    {{ job.formatted_description | safe }}
-                </div>
+                <p class="mb-3" style="color: #00f2ff; font-weight: 700;">🏢 {{ job.company }} | 📍 {{ job.location }}</p>
+                <div class="description-box">{{ job.formatted_description | safe }}</div>
             </div>
-            <div class="col-md-3 d-flex flex-column justify-content-center align-items-center border-start border-secondary ps-4">
-                <p class="text-muted small mb-3 text-center text-white">
-                    Data da Coleta:<br>
-                    <strong>{{ job.created_at.strftime('%d/%m/%Y') if job.created_at else 'Recente' }}</strong>
-                </p>
+            <div class="col-md-3 text-center border-start border-secondary ps-4">
+                
+                <div class="mb-3">
+                    <p class="text-info small mb-0">📅 Publicada em:</p>
+                    <strong class="text-white">
+                        {{ job.published_at if job.published_at and job.published_at != 'None' else 'Não informada' }}
+                    </strong>
+                </div>
+
+                <div class="mb-3">
+                    <p class="text-warning small mb-0">🔍 Encontrada em:</p>
+                    <strong class="text-white">
+                        {% if job.created_at is string %}
+                            {{ job.created_at }}
+                        {% elif job.created_at %}
+                            {{ job.created_at.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            Hoje (Tempo Real)
+                        {% endif %}
+                    </strong>
+                </div>
+
                 <a href="{{ job.link }}" target="_blank" class="btn btn-purple btn-lg w-100 mb-3 text-white">Ver Vaga 🔗</a>
-                {% if job.id %}
-                    <a href="/apply/{{ job.id }}" class="btn btn-outline-success btn-lg w-100">Aplicado ✅</a>
+                
+                {% if job.id and can_use_db %}
+                    <div class="d-grid gap-2">
+                        <a href="/apply/{{ job.id }}" class="btn btn-outline-success btn-sm">Marcar como Aplicado ✅</a>
+                    </div>
                 {% else %}
-                    <div class="alert alert-warning py-1 px-2 mb-0 small text-center w-100">Modo Simulação</div>
+                    <div class="alert alert-info py-1 small mb-0">Sessão Ativa</div>
                 {% endif %}
             </div>
         </div>
@@ -122,14 +146,14 @@
 </div>
 
 <footer class="text-center py-5 text-muted">
-    <p>Bioinfo Seeker &copy; 2025 - Desenvolvido por Caio Mussatto</p>
+    <p class="text-light">JobSeeker Pro &copy; 2025 - Desenvolvido por Caio Mussatto</p>
 </footer>
 
 <script>
     function showLoader() {
         const modalElement = document.getElementById('searchModal');
-        const modal = bootstrap.Modal.getInstance(modalElement);
-        if (modal) modal.hide();
+        const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+        modal.hide();
         document.getElementById('loader-overlay').style.display = 'flex';
     }
 </script>
