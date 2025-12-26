@@ -1,0 +1,134 @@
+/* PALETA DE CORES */
+:root {
+    --primary-purple: #6a0dad;
+    --secondary-purple: #8a2be2;
+    --dark-bg: #0f0c29;
+    --card-bg: #16213e;
+    --accent: #00f2ff;
+    --text-white: #ffffff;
+    --text-muted: #b0b0b0;
+    --danger-red: #ff4d4d;
+}
+
+/* GERAL */
+body {
+    background: linear-gradient(135deg, #0f0c29 0%, #24243e 100%);
+    color: var(--text-white);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* NAVBAR */
+.navbar {
+    background: rgba(15, 12, 41, 0.9) !important;
+    backdrop-filter: blur(12px);
+    border-bottom: 2px solid var(--primary-purple);
+    padding: 15px 0;
+}
+
+/* CARDS DE VAGAS */
+.job-card {
+    background-color: var(--card-bg);
+    border: 1px solid rgba(179, 136, 255, 0.2);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    position: relative; /* Necessário para posicionar o botão de deletar */
+}
+
+.job-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent);
+    box-shadow: 0 10px 25px rgba(0, 242, 255, 0.15);
+}
+
+.job-title {
+    color: #b388ff;
+    font-weight: 800;
+    font-size: 1.5rem;
+}
+
+/* BOTÃO DE DELETAR (X) */
+.btn-delete {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 1.4rem;
+    font-weight: bold;
+    transition: 0.2s;
+    line-height: 1;
+}
+
+.btn-delete:hover {
+    color: var(--danger-red);
+    transform: scale(1.2);
+}
+
+/* DESCRIÇÃO - ESPAÇAMENTO CORRIGIDO */
+.description-box {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 25px;
+    border-radius: 12px;
+    color: var(--text-white);
+    max-height: 300px;
+    overflow-y: auto;
+    border-left: 5px solid var(--primary-purple);
+    line-height: 1.7;
+    font-size: 0.95rem;
+}
+
+.description-box p { margin-bottom: 1.2rem; }
+.description-box ul, .description-box ol { margin-bottom: 1.2rem; padding-left: 20px; }
+.description-box li { margin-bottom: 0.5rem; }
+
+/* BOTÕES */
+.btn-refresh {
+    background: linear-gradient(45deg, var(--primary-purple), var(--secondary-purple));
+    border: none;
+    font-weight: 600;
+    transition: transform 0.2s;
+}
+
+.btn-refresh:hover { transform: scale(1.05); color: white; }
+
+.btn-purple { background-color: var(--primary-purple); color: white; border: none; }
+.btn-purple:hover { background-color: var(--secondary-purple); color: white; }
+
+/* MODAL */
+.modal-content {
+    background-color: #1a1a2e;
+    border: 1px solid var(--primary-purple);
+    border-radius: 20px;
+}
+
+.form-control {
+    background-color: #0f0c29;
+    border: 1px solid #4b0082;
+    color: white !important;
+}
+
+.form-control::placeholder { color: #666; }
+
+.form-control:focus {
+    background-color: #16213e;
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+/* OVERLAY DE CARREGAMENTO */
+#loader-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(15, 12, 41, 0.95);
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.spinner-border { color: var(--accent) !important; width: 3.5rem; height: 3.5rem; }

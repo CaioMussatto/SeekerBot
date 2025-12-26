@@ -1,0 +1,17 @@
+[project]
+name = "bioinfo-seeker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "flask>=3.1.2",
+    "markdown>=3.10",
+    "pandas>=2.3.3",
+    "playwright>=1.57.0",
+    "psycopg2-binary>=2.9.11",
+    "python-dotenv>=1.2.1",
+    "python-jobspy>=1.1.82",
+    "sqlalchemy>=2.0.45",
+]
