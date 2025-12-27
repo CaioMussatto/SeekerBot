@@ -5,7 +5,7 @@
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Cloud_Run-green?logo=googlecloud)](https://seekerbot-763634027496.southamerica-east1.run.app/)
 [![Python](https://img.shields.io/badge/Python-3.11+-yellow?logo=python)](https://www.python.org/)
 
-**SeekerBot** is a specialized automation tool designed to aggregate, filter, and track job opportunities in the fields of Bioinformatics, Biology, and Data Science. It crawls multiple sources (LinkedIn, Indeed, Google Jobs) and provides a clean dashboard for job application management.
+**SeekerBot** is a specialized automation tool designed to aggregate, filter, and track job opportunities in any field. It crawls multiple sources (LinkedIn, Indeed, Google Jobs) and provides a clean dashboard for job application management.
 
 ---
 
