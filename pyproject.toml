@@ -1,7 +1,7 @@
 [project]
-name = "jobseeker"
+name = "seekerbot"
 version = "0.1.0"
-description = "JobSeeker Pro - Rastreador de Vagas"
+description = "JobMiner - Rastreador de Vagas"
 authors = [
     { name = "Caio Mussatto", email = "Caio.mussatto@gmail.com" }
 ]
