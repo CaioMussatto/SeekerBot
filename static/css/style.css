@@ -17,6 +17,13 @@ body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Garante que o conteúdo principal cresça e empurre o footer para baixo */
+main {
+    flex: 1 0 auto;
 }
 
 /* NAVBAR */
@@ -33,7 +40,7 @@ body {
     border: 1px solid rgba(179, 136, 255, 0.2);
     border-radius: 16px;
     transition: all 0.3s ease;
-    position: relative; /* Necessário para posicionar o botão de deletar */
+    position: relative;
 }
 
 .job-card:hover {
@@ -66,7 +73,7 @@ body {
     transform: scale(1.2);
 }
 
-/* DESCRIÇÃO - ESPAÇAMENTO CORRIGIDO */
+/* DESCRIÇÃO */
 .description-box {
     background: rgba(0, 0, 0, 0.3);
     padding: 25px;
@@ -132,3 +139,38 @@ body {
 }
 
 .spinner-border { color: var(--accent) !important; width: 3.5rem; height: 3.5rem; }
+
+/* --- NOVOS ESTILOS PARA O FOOTER & CONTATO --- */
+
+.bg-dark-footer {
+    background-color: #0a0a1a !important;
+}
+
+.contact-link {
+    color: var(--text-white);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.contact-link:hover {
+    opacity: 1;
+    color: var(--accent) !important;
+    transform: translateY(-2px);
+}
+
+.contact-link svg, .contact-link i {
+    color: var(--secondary-purple);
+    transition: color 0.3s ease;
+}
+
+.contact-link:hover svg, .contact-link:hover i {
+    color: var(--accent);
+}
+
+footer .text-muted {
+    font-size: 0.85rem;
+}

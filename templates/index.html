@@ -3,16 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JobSeeker Pro</title>
+    <title>JobSeeker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Estilos Dinâmicos por Fonte */
+        .badge-linkedin { background-color: #0077b5; color: white; }
+        .badge-indeed { background-color: #2164f3; color: white; }
+        .badge-google { background-color: #ea4335; color: white; }
+        .badge-generic { background-color: #6c757d; color: white; }
+    </style>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
 
 <div id="loader-overlay">
     <div class="spinner-border" role="status"></div>
     <h2 class="mt-4 text-white">JobSeeker rastreando oportunidades... 🤖</h2>
-    <p class="text-muted">Processando LinkedIn, Indeed e Google Jobs.</p>
+    <p class="text-muted">Minerando inteligência do LinkedIn, Indeed e Google Jobs.</p>
 </div>
 
 <nav class="navbar navbar-dark sticky-top shadow">
@@ -36,34 +44,35 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow-lg">
       <div class="modal-header border-secondary">
-        <h5 class="modal-title text-white">Parâmetros do JobSeeker</h5>
+        <h5 class="modal-title text-white">Parâmetros de Mineração</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <form action="/refresh" method="POST" onsubmit="showLoader()">
           <div class="modal-body">
             <div class="mb-3">
-                <label class="form-label text-white">Termo (Ex: Biólogo)</label>
-                <input type="text" name="term" class="form-control" value="Biólogo" required>
+                <label class="form-label text-white">Cargo ou Profissão</label>
+                <input type="text" name="term" class="form-control" value="Engenheiro" placeholder="Ex: Desenvolvedor, Analista, Médico" required>
             </div>
             <div class="mb-3">
-                <label class="form-label text-white">Frase Google Jobs</label>
-                <input type="text" name="google_term" class="form-control" value="Vagas de Biologia em São Paulo">
+                <label class="form-label text-white">Frase de Busca (Contexto)</label>
+                <input type="text" name="google_term" class="form-control" placeholder="Ex: Vagas para Gerente de Projetos em Curitiba">
             </div>
             <div class="mb-3">
-                <label class="form-label text-info">📍 Cidade ou 'Brazil'</label>
-                <input type="text" name="location" class="form-control" value="Brazil">
+                <label class="form-label text-info">📍 Localização</label>
+                <input type="text" name="location" class="form-control" value="Brazil" placeholder="Cidade ou país">
             </div>
             <div class="mb-3">
-                <label class="form-label text-warning">Palavras Obrigatórias</label>
-                <input type="text" name="filter_words" class="form-control" placeholder="mestre, laboratório, python">
+                <label class="form-label text-warning">Habilidades Obrigatórias (Keywords)</label>
+                <input type="text" name="filter_words" class="form-control" placeholder="Ex: python, ingles, remoto">
+                <small class="text-muted" style="font-size: 0.8rem;">A vaga deve conter TODAS estas competências.</small>
             </div>
             <div class="row">
                 <div class="col-6 mb-3">
-                    <label class="form-label text-white">Volume</label>
+                    <label class="form-label text-white">Resultados</label>
                     <input type="number" name="results_wanted" class="form-control" value="30">
                 </div>
                 <div class="col-6 mb-3">
-                    <label class="form-label text-white">Horas atrás</label>
+                    <label class="form-label text-white">Recorrência (Horas)</label>
                     <input type="number" name="hours_old" class="form-control" value="336">
                 </div>
             </div>
@@ -71,10 +80,10 @@
             <div class="form-check form-switch mt-3">
                 {% if can_use_db %}
                     <input class="form-check-input" type="checkbox" name="save_db" id="saveDb" checked>
-                    <label class="form-check-label text-white" for="saveDb">💾 Salvar no Banco de Dados?</label>
+                    <label class="form-check-label text-white" for="saveDb">💾 Sincronizar com Banco Pessoal</label>
                 {% else %}
                     <input class="form-check-input" type="checkbox" id="saveDb" disabled>
-                    <label class="form-check-label text-muted" for="saveDb">💾 Banco Desativado (Modo Público)</label>
+                    <label class="form-check-label text-muted" for="saveDb">💾 Modo Efêmero (Sem Banco)</label>
                 {% endif %}
             </div>
           </div>
@@ -86,67 +95,85 @@
   </div>
 </div>
 
-<div class="container mt-4">
+<main class="container mt-4 flex-grow-1">
     {% if not jobs %}
         <div class="text-center py-5">
-            <h2 class="text-white">Nenhuma vaga na visualização.</h2>
-            <p class="text-light">Use o botão <strong>Nova Busca</strong> para iniciar uma pesquisa em tempo real.</p>
+            <h2 class="text-white">Aguardando nova mineração...</h2>
+            <p class="text-light">Abra a <strong>Nova Busca</strong> para encontrar oportunidades atualizadas.</p>
         </div>
     {% endif %}
 
     {% for job in jobs %}
     <div class="card job-card p-4 mb-4 shadow-sm">
         {% if job.id and can_use_db %}
-        <a href="/delete/{{ job.id }}" class="btn-delete" onclick="return confirm('Excluir permanentemente do banco?')">&times;</a>
+        <a href="/delete/{{ job.id }}" class="btn-delete" onclick="return confirm('Remover registro?')">&times;</a>
         {% endif %}
         <div class="row align-items-center">
             <div class="col-md-9">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <h3 class="job-title m-0">{{ job.title }}</h3>
-                    <span class="badge bg-secondary">{{ job.source }}</span>
+                    <span class="badge 
+                        {% if 'linkedin' in job.source %}badge-linkedin
+                        {% elif 'indeed' in job.source %}badge-indeed
+                        {% elif 'google' in job.source %}badge-google
+                        {% else %}badge-generic{% endif %}">
+                        {{ job.source | capitalize }}
+                    </span>
                 </div>
                 <p class="mb-3" style="color: #00f2ff; font-weight: 700;">🏢 {{ job.company }} | 📍 {{ job.location }}</p>
                 <div class="description-box">{{ job.formatted_description | safe }}</div>
             </div>
             <div class="col-md-3 text-center border-start border-secondary ps-4">
-                
                 <div class="mb-3">
-                    <p class="text-info small mb-0">📅 Publicada em:</p>
-                    <strong class="text-white">
-                        {{ job.published_at if job.published_at and job.published_at != 'None' else 'Não informada' }}
-                    </strong>
+                    <p class="text-info small mb-0">📅 Postagem:</p>
+                    <strong class="text-white">{{ job.published_at if job.published_at and job.published_at != 'None' else 'Recente' }}</strong>
                 </div>
 
                 <div class="mb-3">
-                    <p class="text-warning small mb-0">🔍 Encontrada em:</p>
-                    <strong class="text-white">
-                        {% if job.created_at is string %}
-                            {{ job.created_at }}
-                        {% elif job.created_at %}
-                            {{ job.created_at.strftime('%d/%m/%Y') }}
-                        {% else %}
-                            Hoje (Tempo Real)
-                        {% endif %}
-                    </strong>
+                    <p class="text-warning small mb-0">🔍 Rastreio:</p>
+                    <strong class="text-white">{{ job.created_at }}</strong>
                 </div>
 
                 <a href="{{ job.link }}" target="_blank" class="btn btn-purple btn-lg w-100 mb-3 text-white">Ver Vaga 🔗</a>
                 
                 {% if job.id and can_use_db %}
                     <div class="d-grid gap-2">
-                        <a href="/apply/{{ job.id }}" class="btn btn-outline-success btn-sm">Marcar como Aplicado ✅</a>
+                        <a href="/apply/{{ job.id }}" class="btn btn-outline-success btn-sm">Marcar Aplicado ✅</a>
                     </div>
-                {% else %}
-                    <div class="alert alert-info py-1 small mb-0">Sessão Ativa</div>
                 {% endif %}
             </div>
         </div>
     </div>
     {% endfor %}
-</div>
+</main>
 
-<footer class="text-center py-5 text-muted">
-    <p class="text-light">JobSeeker Pro &copy; 2025 - Desenvolvido por Caio Mussatto</p>
+<footer class="footer py-5 mt-5 border-top border-secondary bg-dark-footer">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center text-md-start mb-4 mb-md-0">
+                <h5 class="text-white mb-1">Caio Mussatto</h5>
+                <p class="text-white opacity-75 small mb-0">Cientista de Dados & Desenvolvedor deste projeto.</p>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-center justify-content-md-end gap-4 align-items-center">
+                    <a href="https://github.com/CaioMussatto" target="_blank" class="contact-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-github" viewBox="0 0 16 16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+                        </svg>
+                        <span class="ms-2 d-none d-sm-inline">GitHub</span>
+                    </a>
+
+                    <a href="mailto:Caio.mussatto@gmail.com" class="contact-link">
+                        <i class="bi bi-envelope-at-fill" style="font-size: 1.4rem;"></i>
+                        <span class="ms-2">Caio.mussatto@gmail.com</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <small class="text-white opacity-50">JobSeeker &copy; 2025 | Relatórios de bugs e ideias são bem-vindos.</small>
+        </div>
+    </div>
 </footer>
 
 <script>
