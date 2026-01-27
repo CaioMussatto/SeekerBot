@@ -10,7 +10,7 @@
 ---
 
 ## 🚀 Live Links
-- **Web App (Live):** [SeekerBot on Google Cloud Run](https://jobseeker-pro-763634027496.southamerica-east1.run.app/)
+- **Web App (Live):** [SeekerBot on Google Cloud Run](https://seekerbot-763634027496.southamerica-east1.run.app/)
 - **Docker Image:** https://hub.docker.com/repository/docker/caiomussatto/jobseeker
 
 ---
