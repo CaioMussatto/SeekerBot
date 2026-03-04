@@ -19,8 +19,8 @@
 
 <div id="loader-overlay">
     <div class="spinner-border" role="status"></div>
-    <h2 class="mt-4 text-white">SeekerBot rastreando oportunidades... 🤖</h2>
-    <p class="text-muted">Minerando inteligência do LinkedIn, Indeed e Google Jobs.</p>
+    <h2 class="mt-4 text-white">SeekerBot trabalhando... 🤖</h2>
+    <p class="text-muted" id="loader-text">Minerando vagas e processando currículo com a Inteligência Artificial.<br>Isso pode levar alguns minutos (limites de API).</p>
 </div>
 
 <nav class="navbar navbar-dark sticky-top shadow">
@@ -29,10 +29,17 @@
             <span style="font-size: 1.8rem; margin-right: 10px;">🔍</span>
             <strong>SEEKERBOT</strong>
         </a>
-        <div>
-            <span class="badge rounded-pill bg-dark border border-primary px-3 py-2 me-3">
+        <div class="d-flex align-items-center">
+            <span class="badge rounded-pill bg-dark border border-primary px-3 py-2 me-3 d-none d-md-inline">
                 📍 {{ mode }}
             </span>
+            
+            {% if can_use_db %}
+            <a href="/run_ai" class="btn btn-outline-info text-white me-2" onclick="showLoader('Analisando vagas pendentes com a IA...')">
+                🧠 Executar IA
+            </a>
+            {% endif %}
+
             <button type="button" class="btn btn-refresh text-white" data-bs-toggle="modal" data-bs-target="#searchModal">
                 🚀 Nova Busca
             </button>
@@ -76,6 +83,12 @@
                     <input type="number" name="hours_old" class="form-control" value="24">
                 </div>
             </div>
+
+            <div class="mb-3 border-top border-secondary pt-3 mt-3">
+                <label class="form-label text-success">🎯 Threshold de Afinidade (%)</label>
+                <input type="number" name="min_score" class="form-control" value="80" min="0" max="100">
+                <small class="text-muted" style="font-size: 0.8rem;">Apenas vagas com score da IA igual ou maior serão exibidas.</small>
+            </div>
             
             <div class="form-check form-switch mt-3">
                 {% if can_use_db %}
@@ -99,7 +112,7 @@
     {% if not jobs %}
         <div class="text-center py-5">
             <h2 class="text-white">Aguardando nova mineração...</h2>
-            <p class="text-light">Abra a <strong>Nova Busca</strong> para encontrar oportunidades atualizadas.</p>
+            <p class="text-light">Abra a <strong>Nova Busca</strong> para encontrar oportunidades atualizadas, ou diminua o Threshold.</p>
         </div>
     {% endif %}
 
@@ -110,7 +123,7 @@
         {% endif %}
         <div class="row align-items-center">
             <div class="col-md-9">
-                <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                     <h3 class="job-title m-0">{{ job.title }}</h3>
                     <span class="badge 
                         {% if 'linkedin' in job.source %}badge-linkedin
@@ -119,9 +132,36 @@
                         {% else %}badge-generic{% endif %}">
                         {{ job.source | capitalize }}
                     </span>
+                    
+                    {% if job.match_score != None %}
+                    <span class="badge" style="background-color: #00f2ff; color: #0f0c29; font-weight: bold; font-size: 0.9rem;">
+                        🎯 Match: {{ job.match_score }}%
+                    </span>
+                    {% endif %}
                 </div>
                 <p class="mb-3" style="color: #00f2ff; font-weight: 700;">🏢 {{ job.company }} | 📍 {{ job.location }}</p>
-                <div class="description-box">{{ job.formatted_description | safe }}</div>
+                
+                <ul class="nav nav-pills mb-3 custom-tabs" id="pills-tab-{{ job.id }}" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-desc-tab-{{ job.id }}" data-bs-toggle="pill" data-bs-target="#pills-desc-{{ job.id }}" type="button" role="tab">📄 Descrição da Vaga</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-ai-tab-{{ job.id }}" data-bs-toggle="pill" data-bs-target="#pills-ai-{{ job.id }}" type="button" role="tab">🤖 Feedback da IA</button>
+                  </li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent-{{ job.id }}">
+                  <div class="tab-pane fade show active" id="pills-desc-{{ job.id }}" role="tabpanel">
+                    <div class="description-box">{{ job.formatted_description | safe }}</div>
+                  </div>
+                  <div class="tab-pane fade" id="pills-ai-{{ job.id }}" role="tabpanel">
+                    <div class="description-box ai-feedback-box">
+                        <h5 style="color: #b388ff; margin-bottom: 15px;">Análise de Compatibilidade (Score: {{ job.match_score if job.match_score != None else 'N/A' }}%)</h5>
+                        <p style="white-space: pre-wrap;">{{ job.match_rationale if job.match_rationale else 'A IA ainda não processou esta vaga ou não gerou feedback.' }}</p>
+                    </div>
+                  </div>
+                </div>
+
             </div>
             <div class="col-md-3 text-center border-start border-secondary ps-4">
                 <div class="mb-3">
@@ -177,10 +217,22 @@
 </footer>
 
 <script>
-    function showLoader() {
+    function showLoader(customText) {
+        // Se houver texto customizado, atualiza a mensagem na tela
+        if(customText) {
+            document.getElementById('loader-text').innerHTML = customText;
+        } else {
+            document.getElementById('loader-text').innerHTML = "Minerando vagas e processando currículo com a Inteligência Artificial.<br>Isso pode levar alguns minutos (limites de API).";
+        }
+        
+        // Esconde o modal se ele estiver aberto
         const modalElement = document.getElementById('searchModal');
-        const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-        modal.hide();
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            if(modal) modal.hide();
+        }
+        
+        // Mostra a tela de carregamento
         document.getElementById('loader-overlay').style.display = 'flex';
     }
 </script>

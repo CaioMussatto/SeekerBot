@@ -1,8 +1,25 @@
 services:
-  jobseeker:
-    build: .
-    ports:
-      - "8080:8080"
+  # The database service using PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: job_aggregator_postgres
+    restart: always
+    # This tells Docker to read your existing .env file for credentials
+    env_file:
+      - .env
     environment:
-      - USE_DB=False  
-      - PORT=8080
+      # Mapping the .env variables to PostgreSQL internal variables
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      # Maps your machine's port 5432 to the container's port 5432
+      - "5432:5432"
+    volumes:
+      # Creates a persistent volume named 'pgdata'. 
+      # This ensures your database isn't deleted if the container restarts.
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  # Declaring the named volume used above
+  pgdata:

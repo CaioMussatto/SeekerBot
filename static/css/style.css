@@ -174,3 +174,35 @@ main {
 footer .text-muted {
     font-size: 0.85rem;
 }
+
+/* --- CUSTOM TABS (NAV PILLS) E FEEDBACK IA --- */
+.custom-tabs {
+    gap: 10px;
+}
+
+.custom-tabs .nav-link {
+    color: var(--text-muted);
+    border: 1px solid rgba(179, 136, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.custom-tabs .nav-link:hover {
+    color: var(--text-white);
+    background-color: rgba(106, 13, 173, 0.2);
+}
+
+.custom-tabs .nav-link.active {
+    background: linear-gradient(45deg, var(--primary-purple), var(--secondary-purple));
+    color: var(--text-white);
+    border-color: transparent;
+    font-weight: bold;
+}
+
+.ai-feedback-box {
+    border-left: 5px solid var(--accent);
+    background: rgba(0, 242, 255, 0.05);
+}
