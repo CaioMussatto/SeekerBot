@@ -217,22 +217,55 @@
 </footer>
 
 <script>
+    // Variável para guardar o temporizador das mensagens
+    let loaderInterval;
+
     function showLoader(customText) {
-        // Se houver texto customizado, atualiza a mensagem na tela
+        const loaderTextElement = document.getElementById('loader-text');
+        
+        // Se for um texto customizado (ex: clicar no botão "Executar IA")
         if(customText) {
-            document.getElementById('loader-text').innerHTML = customText;
+            loaderTextElement.innerHTML = customText;
         } else {
-            document.getElementById('loader-text').innerHTML = "Minerando vagas e processando currículo com a Inteligência Artificial.<br>Isso pode levar alguns minutos (limites de API).";
+            // Se for o botão de "Nova Busca" (que agora demora mais)
+            loaderTextElement.innerHTML = "Iniciando SeekerBot...<br><small class='text-warning'>A IA está expandindo sua busca. Isso pode levar cerca de 1 minuto.</small>";
+            
+            // Lista de mensagens para entreter e informar o usuário durante os 60 segundos
+            const progressMessages = [
+                "🧠 Consultando a IA para gerar 5 variações do seu cargo...",
+                "🕵️ Raspando vagas no LinkedIn, Indeed e Glassdoor...",
+                "⏳ Disfarçando o robô com pausas para evitar bloqueios de IP...",
+                "📊 Consolidando os dados e destruindo vagas duplicadas...",
+                "🤖 Injetando as vagas no banco de dados...",
+                "🧠 Lendo seu Master CV e comparando com as exigências...",
+                "🎯 Calculando os Scores de Match usando a régua implacável..."
+            ];
+
+            let msgIndex = 0;
+            
+            // Troca a mensagem na tela a cada 8 segundos
+            loaderInterval = setInterval(() => {
+                loaderTextElement.innerHTML = progressMessages[msgIndex] + 
+                "<br><small class='text-warning'>A IA está expandindo sua busca. Isso pode levar cerca de 1 minuto.</small>";
+                
+                msgIndex++;
+                
+                // Se chegar na última mensagem, congela nela
+                if(msgIndex >= progressMessages.length) {
+                    clearInterval(loaderInterval);
+                }
+            }, 8000); 
         }
         
         // Esconde o modal se ele estiver aberto
         const modalElement = document.getElementById('searchModal');
         if (modalElement) {
+            // Usando a API do Bootstrap 5 corretamente
             const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
             if(modal) modal.hide();
         }
         
-        // Mostra a tela de carregamento
+        // Mostra a tela de carregamento (O CSS já deve ter esse display 'flex' configurado)
         document.getElementById('loader-overlay').style.display = 'flex';
     }
 </script>

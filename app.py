@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, render_template, request, redirect, url_for
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -11,6 +12,7 @@ from core.database import DATABASE_URL
 from models.job import Job
 from services.seeker import fetch_and_save_jobs
 from scripts.run_matcher import run_job_matcher
+from services.term_expander import get_expanded_terms  # <-- IMPORTING THE NEW AI EXPANDER
 
 # Load environment variables from .env file
 load_dotenv()
@@ -75,56 +77,56 @@ def refresh():
     """
     Triggers the scraper to fetch new jobs from the web, 
     automatically saves them to the DB, and then runs the AI Matcher.
+    Applies the PRG (Post/Redirect/Get) pattern to prevent state loss.
+    Now enhanced with AI Query Expansion to search for multiple job title variations.
     """
     # Extract parameters from the frontend form
-    term = request.form.get('term', 'Engenheiro')
+    base_term = request.form.get('term', 'Engenheiro')
     min_score = int(request.form.get('min_score', 80))
     filter_words = request.form.get('filter_words', '')
     location = request.form.get('location', 'Brazil')
     results_wanted = int(request.form.get('results_wanted', 60))
     hours_old = int(request.form.get('hours_old', 24))
     
-    # 1. Fetch jobs from the web using exactly the parameters expected by services/seeker.py
-    # Note: fetch_and_save_jobs handles DB insertion automatically internally.
-    fetch_and_save_jobs(
-        term=term, 
-        location=location,
-        results_wanted=results_wanted,
-        hours_old=hours_old,
-        filter_words=filter_words
-    )
+    # 1. Expand the search term using AI
+    expanded_terms = get_expanded_terms(base_term)
+    
+    # Calculate how many results to fetch per term to avoid overwhelming the scraper
+    # e.g., if user wants 60 results and we have 5 terms, we fetch 12 per term.
+    # Minimum of 10 to ensure the scraper has enough surface area.
+    results_per_term = max(10, results_wanted // len(expanded_terms))
+    
+    print(f"\n🚀 Starting Expanded Search for: {base_term}")
+    print(f"🎯 Target total results: {results_wanted} (Scraping ~{results_per_term} per term)")
+    
+    # 2. Fetch jobs from the web iterating over all expanded terms
+    for index, current_term in enumerate(expanded_terms):
+        print(f"\n[{index + 1}/{len(expanded_terms)}] 👉 Executing search for: '{current_term}'")
+        
+        fetch_and_save_jobs(
+            term=current_term, 
+            location=location,
+            results_wanted=results_per_term,
+            hours_old=hours_old,
+            filter_words=filter_words
+        )
+        
+        # Anti-Ban Protection: Sleep between requests (except after the last one)
+        if index < len(expanded_terms) - 1:
+            print("⏳ Sleeping for 15 seconds to prevent IP rate-limiting...")
+            time.sleep(15)
 
-    # 2. RUN AI AUTOMATICALLY
-    # Now that new jobs are in the database, we run the AI to evaluate them.
+    # 3. RUN AI AUTOMATICALLY
+    # Now that new jobs from all terms are in the database, run the AI to evaluate them.
     if USE_DB:
-        print("🧠 Starting AI to evaluate pending jobs...")
+        print("\n🧠 Starting AI to evaluate all newly pending jobs...")
         try:
             run_job_matcher()
         except Exception as e:
             print(f"❌ Error running AI automatically: {e}")
 
-    # 3. Prepare the job list for display (Reading from Database)
-    display_jobs = []
-    if USE_DB:
-        session = get_session()
-        
-        # Display ONLY jobs that meet the AI threshold
-        display_jobs = session.query(Job).filter(
-            Job.rejected == False,
-            Job.applied == False,
-            Job.match_score != None,
-            Job.match_score >= min_score
-        ).order_by(Job.match_score.desc(), Job.id.desc()).all()
-        
-        for j in display_jobs:
-            j.formatted_description = markdown.markdown(j.description or "")
-            if hasattr(j.created_at, 'strftime'):
-                j.display_created_at = j.created_at.strftime('%d/%m/%Y %H:%M')
-                
-        session.close()
-
-    # Render the template with the newly fetched and filtered jobs
-    return render_template('index.html', jobs=display_jobs, can_use_db=USE_DB, mode=f"Threshold: {min_score}%")
+    # 4. Redirect back to the index, keeping the score filter alive in the URL
+    return redirect(url_for('index', min_score=min_score))
 
 
 @app.route('/run_ai')
@@ -140,8 +142,8 @@ def run_ai_manual():
         except Exception as e:
             print(f"❌ Error running AI manually: {e}")
             
-    # Redirects back to home page after finishing
-    return redirect(url_for('index'))
+    # Redirects back to the exact page the user was on (preserves active filters)
+    return redirect(request.referrer or url_for('index'))
 
 
 @app.route('/apply/<int:job_id>')
@@ -152,12 +154,15 @@ def apply(job_id):
     """
     if USE_DB:
         session = get_session()
-        job = session.query(Job).get(job_id)
+        # FIXED: Using session.get() instead of the legacy query(Job).get()
+        job = session.get(Job, job_id)
         if job:
             job.applied = not job.applied
             session.commit()
         session.close()
-    return redirect(url_for('index'))
+        
+    # Redirects back to the exact page the user was on (preserves active filters)
+    return redirect(request.referrer or url_for('index'))
 
 
 @app.route('/delete/<int:job_id>')
@@ -169,12 +174,15 @@ def delete_job(job_id):
     """
     if USE_DB:
         session = get_session()
-        job = session.query(Job).get(job_id)
+        # FIXED: Using session.get() instead of the legacy query(Job).get()
+        job = session.get(Job, job_id)
         if job:
             job.rejected = True 
             session.commit()
         session.close()
-    return redirect(url_for('index'))
+        
+    # Redirects back to the exact page the user was on (preserves active filters)
+    return redirect(request.referrer or url_for('index'))
 
 
 if __name__ == '__main__':
