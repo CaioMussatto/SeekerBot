@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SeekerBot</title>
+    <title>SeekerBot Web</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -11,7 +11,7 @@
         /* Estilos Dinâmicos por Fonte */
         .badge-linkedin { background-color: #0077b5; color: white; }
         .badge-indeed { background-color: #2164f3; color: white; }
-        .badge-google { background-color: #ea4335; color: white; }
+        .badge-glassdoor { background-color: #0caa41; color: white; }
         .badge-generic { background-color: #6c757d; color: white; }
     </style>
 </head>
@@ -19,26 +19,46 @@
 
 <div id="loader-overlay">
     <div class="spinner-border" role="status"></div>
-    <h2 class="mt-4 text-white">SeekerBot rastreando oportunidades... 🤖</h2>
-    <p class="text-muted">Minerando inteligência do LinkedIn, Indeed e Google Jobs.</p>
+    <h2 class="mt-4 text-white">SeekerBot trabalhando... 🤖</h2>
+    <p class="text-muted" id="loader-text">Minerando vagas e processando currículo com a Inteligência Artificial.<br>Isso pode levar alguns minutos (limites de API).</p>
 </div>
 
 <nav class="navbar navbar-dark sticky-top shadow">
     <div class="container d-flex justify-content-between align-items-center">
         <a class="navbar-brand d-flex align-items-center" href="/">
             <span style="font-size: 1.8rem; margin-right: 10px;">🔍</span>
-            <strong>SEEKERBOT</strong>
+            <strong>SEEKERBOT WEB</strong>
         </a>
-        <div>
-            <span class="badge rounded-pill bg-dark border border-primary px-3 py-2 me-3">
-                📍 {{ mode }}
-            </span>
+        <div class="d-flex align-items-center">
+            
+            {% if has_cv_in_memory %}
+                <span class="badge bg-success me-2 py-2 px-3">📄 CV na Memória</span>
+                <form action="/clear_cv" method="POST" class="d-inline me-3">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Apagar CV da Memória">🗑️</button>
+                </form>
+            {% else %}
+                <span class="badge bg-warning text-dark me-3 py-2 px-3">⚠️ Nenhum CV carregado</span>
+            {% endif %}
+
             <button type="button" class="btn btn-refresh text-white" data-bs-toggle="modal" data-bs-target="#searchModal">
                 🚀 Nova Busca
             </button>
         </div>
     </div>
 </nav>
+
+<div class="container mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else ('warning' if category == 'warning' else 'info') }} alert-dismissible fade show shadow" role="alert">
+                    <strong>Aviso do Sistema:</strong> {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
 
 <div class="modal fade" id="searchModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -47,15 +67,23 @@
         <h5 class="modal-title text-white">Parâmetros de Mineração</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/refresh" method="POST" onsubmit="showLoader()">
+      <form action="/search" method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
           <div class="modal-body">
+            
+            <div class="mb-4 border border-info p-3 rounded" style="background-color: rgba(0, 242, 255, 0.05);">
+                <label class="form-label text-info fw-bold">📄 Upload do Currículo (PDF)</label>
+                <input type="file" name="cv_files" class="form-control bg-dark text-white border-secondary" accept=".pdf" multiple {% if not has_cv_in_memory %}required{% endif %}>
+                
+                {% if has_cv_in_memory %}
+                    <small class="text-success mt-1 d-block">✅ Você já tem um currículo salvo na sessão. Deixe este campo vazio para usá-lo, ou suba novos arquivos para substituir.</small>
+                {% else %}
+                    <small class="text-warning mt-1 d-block">⚠️ Obrigatório. A IA precisa do seu CV para calcular o Score de compatibilidade.</small>
+                {% endif %}
+            </div>
+
             <div class="mb-3">
                 <label class="form-label text-white">Cargo ou Profissão</label>
                 <input type="text" name="term" class="form-control" value="Engenheiro" placeholder="Ex: Desenvolvedor, Analista, Médico" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label text-white">Frase de Busca (Contexto)</label>
-                <input type="text" name="google_term" class="form-control" placeholder="Ex: Vagas para Gerente de Projetos em Curitiba">
             </div>
             <div class="mb-3">
                 <label class="form-label text-info">📍 Localização</label>
@@ -68,79 +96,89 @@
             </div>
             <div class="row">
                 <div class="col-6 mb-3">
-                    <label class="form-label text-white">Resultados</label>
+                    <label class="form-label text-white">Resultados Desejados</label>
                     <input type="number" name="results_wanted" class="form-control" value="30">
                 </div>
                 <div class="col-6 mb-3">
                     <label class="form-label text-white">Recorrência (Horas)</label>
-                    <input type="number" name="hours_old" class="form-control" value="336">
+                    <input type="number" name="hours_old" class="form-control" value="24">
                 </div>
             </div>
-            
-            <div class="form-check form-switch mt-3">
-                {% if can_use_db %}
-                    <input class="form-check-input" type="checkbox" name="save_db" id="saveDb" checked>
-                    <label class="form-check-label text-white" for="saveDb">💾 Sincronizar com Banco Pessoal</label>
-                {% else %}
-                    <input class="form-check-input" type="checkbox" id="saveDb" disabled>
-                    <label class="form-check-label text-muted" for="saveDb">💾 Modo Efêmero (Sem Banco)</label>
-                {% endif %}
+
+            <div class="mb-3 border-top border-secondary pt-3 mt-3">
+                <label class="form-label text-success">🎯 Threshold de Afinidade (%)</label>
+                <input type="number" name="min_score" class="form-control" value="80" min="0" max="100">
+                <small class="text-muted" style="font-size: 0.8rem;">Apenas vagas com score da IA igual ou maior serão exibidas na tela.</small>
             </div>
+            
           </div>
           <div class="modal-footer border-0">
-            <button type="submit" class="btn btn-primary w-100 py-3 shadow">Lançar Robô 🚀</button>
+            <button type="submit" class="btn btn-primary w-100 py-3 shadow">🚀 Lançar Robô na Nuvem</button>
           </div>
       </form>
     </div>
   </div>
 </div>
 
-<main class="container mt-4 flex-grow-1">
+<main class="container flex-grow-1">
     {% if not jobs %}
-        <div class="text-center py-5">
-            <h2 class="text-white">Aguardando nova mineração...</h2>
-            <p class="text-light">Abra a <strong>Nova Busca</strong> para encontrar oportunidades atualizadas.</p>
+        <div class="text-center py-5 mt-5">
+            <h2 class="text-white">Pronto para buscar oportunidades!</h2>
+            <p class="text-light">Abra a <strong>Nova Busca</strong>, suba seu PDF e deixe o SeekerBot garimpar e analisar as vagas por você.</p>
         </div>
     {% endif %}
 
     {% for job in jobs %}
     <div class="card job-card p-4 mb-4 shadow-sm">
-        {% if job.id and can_use_db %}
-        <a href="/delete/{{ job.id }}" class="btn-delete" onclick="return confirm('Remover registro?')">&times;</a>
-        {% endif %}
         <div class="row align-items-center">
             <div class="col-md-9">
-                <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                     <h3 class="job-title m-0">{{ job.title }}</h3>
                     <span class="badge 
                         {% if 'linkedin' in job.source %}badge-linkedin
                         {% elif 'indeed' in job.source %}badge-indeed
-                        {% elif 'google' in job.source %}badge-google
+                        {% elif 'glassdoor' in job.source %}badge-glassdoor
                         {% else %}badge-generic{% endif %}">
                         {{ job.source | capitalize }}
                     </span>
+                    
+                    {% if job.match_score != None %}
+                    <span class="badge" style="background-color: #00f2ff; color: #0f0c29; font-weight: bold; font-size: 0.9rem;">
+                        🎯 Match: {{ job.match_score }}%
+                    </span>
+                    {% endif %}
                 </div>
                 <p class="mb-3" style="color: #00f2ff; font-weight: 700;">🏢 {{ job.company }} | 📍 {{ job.location }}</p>
-                <div class="description-box">{{ job.formatted_description | safe }}</div>
+                
+                <ul class="nav nav-pills mb-3 custom-tabs" id="pills-tab-{{ loop.index }}" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-desc-tab-{{ loop.index }}" data-bs-toggle="pill" data-bs-target="#pills-desc-{{ loop.index }}" type="button" role="tab">📄 Descrição da Vaga</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-ai-tab-{{ loop.index }}" data-bs-toggle="pill" data-bs-target="#pills-ai-{{ loop.index }}" type="button" role="tab">🤖 Feedback da IA</button>
+                  </li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent-{{ loop.index }}">
+                  <div class="tab-pane fade show active" id="pills-desc-{{ loop.index }}" role="tabpanel">
+                    <div class="description-box">{{ job.formatted_description | safe }}</div>
+                  </div>
+                  <div class="tab-pane fade" id="pills-ai-{{ loop.index }}" role="tabpanel">
+                    <div class="description-box ai-feedback-box">
+                        <h5 style="color: #b388ff; margin-bottom: 15px;">Análise de Compatibilidade (Score: {{ job.match_score if job.match_score != None else 'N/A' }}%)</h5>
+                        <p style="white-space: pre-wrap;">{{ job.rationale if job.rationale else 'A IA não gerou feedback para esta vaga.' }}</p>
+                    </div>
+                  </div>
+                </div>
+
             </div>
             <div class="col-md-3 text-center border-start border-secondary ps-4">
                 <div class="mb-3">
-                    <p class="text-info small mb-0">📅 Postagem:</p>
+                    <p class="text-info small mb-0">📅 Postagem na Plataforma:</p>
                     <strong class="text-white">{{ job.published_at if job.published_at and job.published_at != 'None' else 'Recente' }}</strong>
                 </div>
 
-                <div class="mb-3">
-                    <p class="text-warning small mb-0">🔍 Rastreio:</p>
-                    <strong class="text-white">{{ job.created_at }}</strong>
-                </div>
-
-                <a href="{{ job.link }}" target="_blank" class="btn btn-purple btn-lg w-100 mb-3 text-white">Ver Vaga 🔗</a>
-                
-                {% if job.id and can_use_db %}
-                    <div class="d-grid gap-2">
-                        <a href="/apply/{{ job.id }}" class="btn btn-outline-success btn-sm">Marcar Aplicado ✅</a>
-                    </div>
-                {% endif %}
+                <a href="{{ job.link }}" target="_blank" class="btn btn-purple btn-lg w-100 mb-3 text-white">Ir para a Vaga 🔗</a>
             </div>
         </div>
     </div>
@@ -171,16 +209,45 @@
             </div>
         </div>
         <div class="text-center mt-4">
-            <small class="text-white opacity-50">SeekerBot &copy; 2025 | Relatórios de bugs e ideias são bem-vindos.</small>
+            <small class="text-white opacity-50">SeekerBot &copy; 2026 | Arquitetura In-Memory (SaaS)</small>
         </div>
     </div>
 </footer>
 
 <script>
+    let loaderInterval;
+
     function showLoader() {
+        const loaderTextElement = document.getElementById('loader-text');
+        
+        loaderTextElement.innerHTML = "Iniciando SeekerBot Web...<br><small class='text-warning'>A IA está lendo seu CV e processando as vagas na memória.</small>";
+        
+        const progressMessages = [
+            "🧠 Analisando o seu Currículo (PDF) em memória...",
+            "🕵️ Raspando vagas em tempo real nas plataformas...",
+            "⏳ Aplicando filtros de deduplicação na sessão...",
+            "🤖 A IA está cruzando as exigências da vaga com a sua experiência...",
+            "🎯 Calculando o Match Score final..."
+        ];
+
+        let msgIndex = 0;
+        
+        loaderInterval = setInterval(() => {
+            loaderTextElement.innerHTML = progressMessages[msgIndex] + 
+            "<br><small class='text-warning'>Por favor, não feche esta aba. Processamento In-Memory em andamento.</small>";
+            
+            msgIndex++;
+            if(msgIndex >= progressMessages.length) {
+                clearInterval(loaderInterval);
+            }
+        }, 8000); 
+        
         const modalElement = document.getElementById('searchModal');
-        const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-        modal.hide();
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            if(modal) modal.hide();
+        }
+        
         document.getElementById('loader-overlay').style.display = 'flex';
     }
 </script>

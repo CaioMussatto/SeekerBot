@@ -1,7 +1,7 @@
 [project]
 name = "seekerbot"
 version = "0.1.0"
-description = "JobMiner - Rastreador de Vagas"
+description = "seekerbot - Rastreador de Vagas"
 authors = [
     { name = "Caio Mussatto", email = "Caio.mussatto@gmail.com" }
 ]
@@ -17,5 +17,9 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["services*"] 
+exclude = ["static", "templates", "docs_cv"]  
