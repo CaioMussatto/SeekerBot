@@ -6,3 +6,8 @@ services:
     environment:
       - USE_DB=False  
       - PORT=8080
+    env_file:
+      - .env
+    labels:
+      - "org.opencontainers.image.title=SeekerBot"
+      - "org.opencontainers.image.authors=Caio Mussatto <caio.mussatto@gmail.com>"

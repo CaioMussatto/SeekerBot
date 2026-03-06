@@ -10,7 +10,9 @@ requires-python = ">=3.11"
 dependencies = [
     "flask>=3.1.2",
     "markdown>=3.10",
+    "openai>=2.26.0",
     "psycopg2-binary>=2.9.11",
+    "pypdf>=6.7.5",
     "python-dotenv>=1.2.1",
     "python-jobspy>=1.1.82",
     "sqlalchemy>=2.0.45",
